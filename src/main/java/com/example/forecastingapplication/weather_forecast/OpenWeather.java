@@ -9,59 +9,99 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.forecastingapplication.weather_forecast.OpenWeatherConstants.*;
+
 @Service
 public class OpenWeather {
-    private static final String COORDINATES_URL = "http://api.openweathermap.org/geo/1.0/direct";
-    private static final String CITY_NAME = "q"; // name of the parameter required by OpenWeather API
-    private static final String LIMIT = "limit"; // Number of the locations in the API response (up to 5 results can be returned in the API response)
-    private static final Integer TIMEOUT = 5000; // ms
-    private static final String API_KEY = "appid";
-    private static final String ONE = "1";
-    private static final String GET = "GET";
-    private static final String UTF_8 = "UTF-8";
-    private static final String QUESTION_MARK = "?";
-    private static final String EQUALS = "=";
-    private static final String AND = "&";
-    private static final String LATITUDE = "lat";
-    private static final String LONGITUDE = "lon";
-
     private final String apiKey;
-
 
     public OpenWeather(@Value("${api-key}") String apiKey){
         this.apiKey = apiKey;
     }
 
-    private Double[] getCityCoordinates(String cityName) throws Exception {
+    public WeatherForecast requestWeatherForecast(Double latitude,Double longitude) throws Exception{
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(LATITUDE, latitude + "");
+        parameters.put(LONGITUDE, longitude + "");
+        parameters.put(API_KEY, apiKey);
+        parameters.put(UNITS, METRIC);
 
-        Map<String, String> parameters = buildParams(cityName, apiKey);
+        String url = buildUrl(WEATHER_FORECAST_URL, parameters);
+        String jsonResponse = sendGetRequest(url);
 
-        String url = buildUrl(COORDINATES_URL, parameters);
-        String jsonResponse = sendRequest(url);
-        Double[] coordinates = parseCoordinates(jsonResponse);
-
-        return coordinates;
+        return parseWeatherForecast(jsonResponse);
     }
 
-    private static String buildUrl(String URL, Map<String, String> params) throws UnsupportedEncodingException {
-        StringBuilder sb = new StringBuilder(URL);
+    public Double[] requestCityCoordinates(String cityName) throws Exception {
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put(CITY_NAME, cityName);
+        parameters.put(API_KEY, apiKey);
+        parameters.put(LIMIT, ONE);
+
+        String url = buildUrl(COORDINATES_URL, parameters);
+        String jsonResponse = sendGetRequest(url);
+
+        return parseCoordinates(jsonResponse);
+    }
+
+    private WeatherForecast parseWeatherForecast(String jsonResponse) throws Exception{
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
+
+        Double latitude = jsonObject.get(LATITUDE).getAsDouble();
+        Double longitude = jsonObject.get(LONGITUDE).getAsDouble();
+
+        JsonArray jsonArray = jsonObject.get(DAILY).getAsJsonArray();
+
+        if(jsonArray == null || jsonArray.isEmpty()) throw new Exception("City Array does not exist!");
+
+        JsonObject dailyForecast = jsonArray.get(0).getAsJsonObject();
+
+        JsonObject temperature = dailyForecast.get(TEMPERATURE).getAsJsonObject();
+        Double maxTemperature = temperature.get(MAX).getAsDouble();
+
+        JsonObject feelsLike = dailyForecast.getAsJsonObject(FEELS_LIKE).getAsJsonObject();
+        Double morningTemperature = feelsLike.get(MORNING).getAsDouble();
+        Double dayTemperature = feelsLike.get(DAY).getAsDouble();
+        Double eveningTemperature = feelsLike.get(EVENING).getAsDouble();
+        Double nightTemperature = feelsLike.get(NIGHT).getAsDouble();
+
+        Double humidity = dailyForecast.get(HUMIDITY).getAsDouble();
+
+
+
+        return WeatherForecast.builder()
+                .latitude(latitude)
+                .longitude(longitude)
+                .maxTemperature(maxTemperature)
+                .morningTemperature(morningTemperature)
+                .dayTemperature(dayTemperature)
+                .eveningTemperature(eveningTemperature)
+                .nightTemperature(nightTemperature)
+                .humidity(humidity)
+                .build();
+    }
+
+
+    private static String buildUrl(String url, Map<String, String> params) {
+        StringBuilder sb = new StringBuilder(url);
         sb.append(QUESTION_MARK);
 
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            sb.append(URLEncoder.encode(entry.getKey(), UTF_8));
+            sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
             sb.append(EQUALS);
-            sb.append(URLEncoder.encode(entry.getValue(), UTF_8));
+            sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
             sb.append(AND);
         }
 
         return sb.toString();
     }
 
-    private static String sendRequest(String urlString) throws Exception {
+    private static String sendGetRequest(String urlString) throws Exception {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -86,22 +126,14 @@ public class OpenWeather {
         Gson gson = new Gson();
         JsonArray jsonArray = gson.fromJson(jsonResponse, JsonArray.class);
 
-        if(jsonArray == null || jsonArray.size() == 0) throw new Exception("City Array does not exist!");
+        if(jsonArray == null || jsonArray.isEmpty()) throw new Exception("City Array does not exist!");
 
         JsonObject city = jsonArray.get(0).getAsJsonObject();
 
-        Double latitude = city.get(LATITUDE).getAsDouble();
-        Double longitude = city.get(LONGITUDE).getAsDouble();
+        double latitude = city.get(LATITUDE).getAsDouble();
+        double longitude = city.get(LONGITUDE).getAsDouble();
 
         return new Double[]{latitude, longitude};
     }
 
-    private static Map<String, String> buildParams(String cityName, String apiKey){
-        Map<String, String> parameters = new HashMap<>();
-        parameters.put(CITY_NAME, cityName);
-        parameters.put(API_KEY, apiKey);
-        parameters.put(LIMIT, ONE);
-
-        return parameters;
-    }
 }
