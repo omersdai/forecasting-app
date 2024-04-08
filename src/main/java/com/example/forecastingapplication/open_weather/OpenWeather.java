@@ -1,6 +1,6 @@
-package com.example.forecastingapplication.weather_forecast;
+package com.example.forecastingapplication.open_weather;
 
-
+import com.example.forecastingapplication.model.WeatherForecast;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.example.forecastingapplication.weather_forecast.OpenWeatherConstants.*;
+import static com.example.forecastingapplication.open_weather.OpenWeatherConstants.*;
 
 @Service
 public class OpenWeather {
@@ -23,7 +23,7 @@ public class OpenWeather {
         this.apiKey = apiKey;
     }
 
-    public WeatherForecast requestWeatherForecast(Double latitude,Double longitude) throws Exception{
+    public WeatherForecast requestWeatherForecast(Double latitude, Double longitude) throws Exception{
         Map<String, String> parameters = new HashMap<>();
         parameters.put(LATITUDE, latitude + "");
         parameters.put(LONGITUDE, longitude + "");
@@ -57,7 +57,7 @@ public class OpenWeather {
 
         JsonArray jsonArray = jsonObject.get(DAILY).getAsJsonArray();
 
-        if(jsonArray == null || jsonArray.isEmpty()) throw new Exception("City Array does not exist!");
+        if(jsonArray == null || jsonArray.isEmpty()) throw new Exception("Daily Forecast Array does not exist!");
 
         JsonObject dailyForecast = jsonArray.get(0).getAsJsonObject();
 
@@ -73,7 +73,6 @@ public class OpenWeather {
         Double humidity = dailyForecast.get(HUMIDITY).getAsDouble();
 
 
-
         return WeatherForecast.builder()
                 .latitude(latitude)
                 .longitude(longitude)
@@ -85,7 +84,6 @@ public class OpenWeather {
                 .humidity(humidity)
                 .build();
     }
-
 
     private static String buildUrl(String url, Map<String, String> params) {
         StringBuilder sb = new StringBuilder(url);

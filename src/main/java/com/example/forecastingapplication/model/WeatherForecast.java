@@ -1,4 +1,4 @@
-package com.example.forecastingapplication.weather_forecast;
+package com.example.forecastingapplication.model;
 
 import lombok.Builder;
 import lombok.Getter;

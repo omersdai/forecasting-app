@@ -1,4 +1,4 @@
-package com.example.forecastingapplication.weather_forecast;
+package com.example.forecastingapplication.open_weather;
 
 public class OpenWeatherConstants {
     public static final String COORDINATES_URL = "http://api.openweathermap.org/geo/1.0/direct";

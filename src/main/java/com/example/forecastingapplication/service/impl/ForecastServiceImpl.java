@@ -1,15 +1,18 @@
-package com.example.forecastingapplication.weather_forecast;
+package com.example.forecastingapplication.service.impl;
 
 
+import com.example.forecastingapplication.service.ForecastService;
+import com.example.forecastingapplication.open_weather.OpenWeather;
+import com.example.forecastingapplication.model.WeatherForecast;
 import org.springframework.stereotype.Service;
 
 
 
 @Service
-public class ForecastService {
+public class ForecastServiceImpl implements ForecastService {
     private final OpenWeather openWeather;
 
-    public ForecastService(OpenWeather openWeather){
+    public ForecastServiceImpl(OpenWeather openWeather){
         this.openWeather = openWeather;
     }
 
