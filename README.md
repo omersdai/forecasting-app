@@ -46,7 +46,7 @@ This is a simple guide to building and running a Maven Spring Boot web project.
 
 ## Configuration
 
-- `application.properties`: Contains application-specific properties such as server port, database configuration, etc.
+- `application.properties`: Contains application-specific properties such as server port, api key, etc.
 - `pom.xml`: Contains Maven project configuration including dependencies and plugins.
 
 ## Development
